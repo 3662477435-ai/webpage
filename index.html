@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>广东碳温时空图谱</title>
+    <link rel="stylesheet" href="src/styles.css" />
+    <script src="src/vendor/d3.v7.min.js"></script>
+    <script src="src/vendor/lucide.min.js"></script>
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark">GD</span>
+          <div>
+            <div class="eyebrow">Guangdong Carbon-Temperature Atlas</div>
+            <h1>广东碳温时空图谱</h1>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span class="status-chip"><i data-lucide="radio-tower"></i>公网临时访问</span>
+          <button class="icon-button" id="resetView" type="button" title="重置视图">
+            <i data-lucide="rotate-ccw"></i>
+          </button>
+          <button class="icon-button" id="openSources" type="button" title="数据源">
+            <i data-lucide="database"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="map-panel" aria-label="广东城市排放地图">
+          <div class="panel-head map-head">
+            <div>
+              <p class="section-kicker">Map View</p>
+              <h2 id="mapTitle">广东省地级市 CO2e 排放</h2>
+              <p id="mapSubtitle" class="subtle">加载中</p>
+            </div>
+            <div class="legend" id="legend"></div>
+          </div>
+
+          <div class="time-controls">
+            <button class="icon-button play-button" id="playButton" type="button" title="播放时间序列">
+              <i data-lucide="play"></i>
+            </button>
+            <div class="time-readout" id="dateLabel">2025 / 12</div>
+            <input id="timeSlider" class="range" type="range" min="0" max="59" step="1" value="59" aria-label="时间" />
+            <label class="opacity-control">
+              <span>透明度</span>
+              <input id="opacitySlider" class="range narrow" type="range" min="35" max="100" value="88" aria-label="图层透明度" />
+            </label>
+          </div>
+
+          <div class="temporal-panel">
+            <div class="temporal-head">
+              <div>
+                <p class="section-kicker">Time Flow</p>
+                <h3>CO2e 排放与月均温</h3>
+              </div>
+              <div class="temporal-readout">
+                <strong id="temporalMonth">2025 / 12</strong>
+                <span id="temporalStats">--</span>
+              </div>
+            </div>
+            <svg id="temporalChart" class="temporal-chart" role="img" aria-label="广东月度排放与温度时间变化"></svg>
+          </div>
+
+          <div class="map-canvas">
+            <svg id="mapSvg" role="img" aria-label="广东城市排放分级地图"></svg>
+            <div id="mapTooltip" class="map-tooltip" hidden></div>
+            <div class="osm-attribution">© OpenStreetMap contributors</div>
+          </div>
+
+          <div class="metric-tabs" id="metricTabs" role="tablist" aria-label="地图指标"></div>
+        </section>
+
+        <aside class="inspector" aria-label="城市详情">
+          <div class="panel-head inspector-head">
+            <div>
+              <p class="section-kicker">City Profile</p>
+              <h2 id="cityName">广州</h2>
+              <p class="subtle" id="cityMeta">Climate TRACE GADM Level 2</p>
+            </div>
+            <select id="citySelect" aria-label="选择城市"></select>
+          </div>
+
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <span class="kpi-label">当前月排放</span>
+              <strong id="kpiMonth">--</strong>
+              <small id="kpiMonthRank">--</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">2025 总量</span>
+              <strong id="kpiAnnual">--</strong>
+              <small id="kpiTrend">--</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">主导部门</span>
+              <strong id="kpiTopSector">--</strong>
+              <small id="kpiTopSectorShare">--</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">当前月均温</span>
+              <strong id="kpiTemp">--</strong>
+              <small id="kpiTempTrend">--</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">压力指数</span>
+              <strong id="kpiPressure">--</strong>
+              <small id="kpiPressureRank">--</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">排放-温度相关</span>
+              <strong id="kpiCorrelation">--</strong>
+              <small>2021-2025 月序列</small>
+            </article>
+          </div>
+
+          <section class="mini-section">
+            <div class="section-line">
+              <h3>月度轨迹</h3>
+              <span id="lineChartNote">2021-2025</span>
+            </div>
+            <svg id="lineChart" class="chart" role="img" aria-label="城市月度排放曲线"></svg>
+          </section>
+
+          <section class="mini-section">
+            <div class="section-line">
+              <h3>部门构成</h3>
+              <span id="sectorYearLabel">2025</span>
+            </div>
+            <div id="sectorBars" class="sector-bars"></div>
+          </section>
+        </aside>
+
+        <section class="parallel-panel" aria-label="平行坐标图">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Parallel Coordinate Plot</p>
+              <h2>城市排放结构对比</h2>
+            </div>
+            <div class="axis-toggles" id="axisToggles"></div>
+          </div>
+          <svg id="parallelChart" class="parallel-chart" role="img" aria-label="广东城市多指标平行坐标图"></svg>
+        </section>
+
+        <section class="table-panel" aria-label="城市数据表">
+          <div class="panel-head table-head">
+            <div>
+              <p class="section-kicker">Data Table</p>
+              <h2>城市指标表</h2>
+            </div>
+            <label class="search-box">
+              <i data-lucide="search"></i>
+              <input id="tableSearch" type="search" placeholder="搜索城市" />
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table id="cityTable">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="sourcesDialog" class="sources-dialog">
+      <div class="dialog-head">
+        <h2>数据与参考</h2>
+        <button class="icon-button" id="closeSources" type="button" title="关闭">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="source-list" id="sourceList"></div>
+    </dialog>
+  </body>
+</html>
