@@ -1,0 +1,8 @@
+dist/
+node_modules/
+outputs/
+tools/
+deliverables/
+report_work/
+*.log
+.env
